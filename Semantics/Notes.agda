@@ -286,18 +286,272 @@ module Semantics.Notes where
    ---
 -}
 
+-- ========================
+-- Day Two (8 August, 2019)
+-- ========================
+
+-- Semantics
+-- =========
+
+{-
+
+  Recall tha tan adjunction consists of a pair of functors
+
+    F : C → D
+    U : D → C
+
+  and a natural bijection
+
+    hom_D(F C, D) ≅ hom_C(C, U D)
+
+  Proposition: Given a function
+
+    p : J → I
+
+  we can define a function
+
+    D : Setᴵ → Setᴶ
+    D   (Aᵢ) ↦ (A_{pj})
+    D   A   ↦ A ∘ p
+
+  Moreover, this function has left and right adjoints
+
+    Lp : Setᴶ → Setᴵ
+    Lp   (Aⱼ) ↦ (⊎ Aⱼ)
+
+    Rp : Setᴵ → Setᴶ
+    Rp   (Aⱼ) ↦ (Π Aⱼ)
+-}
+
+{-
+  Using the slice category equivalence, we get a square
+
+  J      Setᴶ ≅ Set/J
+  |      ↑          ↑
+  |      |          |
+  | p  D |          | pᴵ
+  |      |          |
+  ↓      |          |
+  I      Setᴵ ≅ Set/I
+
+  And because adjoints are preserved by equivalences, pᴵ in the slice categories
+  has left and right adjoints Σp and Πp
+-}
+
+-- Pullbacks
+-- =========
+
+{-
+  Pullbacks correspond both to substitution and weakening.
+
+  Weakening:
+
+                  ⟦Γ, x : A, y : B, z : C⟧ -------------→ ⟦Γ, z : C⟧
+                      |                                        |
+                      |                                        |
+ ⟦Γ, y : B ⊢ C type⟧  |                                        | ⟦Γ ⊢ C type⟧
+                      |                                        |
+                      |                                        |
+                      ↓                                        ↓
+                  ⟦Γ, y : B⟧ -------------------------------→ ⟦Γ⟧
+                                       ⟦Γ ⊢ B type⟧
+
+  Substitution:
+
+                  ⟦Γ, x : A, y : B, z : C⟧ -------------→ ⟦Γ, z : C[t‌/y]⟧
+                      |                                        |
+                      |                                        |
+⟦Γ, y : B ⊢ C type⟧   |                                        | ⟦Γ ⊢ C[t‌/y]⟧
+                      |                                        |
+                      |               ⟦Γ ⊢ t : B⟧              |
+                      ↓      ←-------------------------------  ↓
+                  ⟦Γ, y : B⟧ -------------------------------→ ⟦Γ⟧
+                                       ⟦Γ ⊢ B type⟧
+-}
+
+{-
+  For the identity type,
+
+  x : A , y : A ⊢ Id(x, y) type
+
+        δ                 π₁
+  ⟦A⟧ -----→ ⟦A⟧ × ⟦A⟧ -----→ ⟦A⟧
 
 
+                                                        ⟦Γ, x : A⟧
+                                                           /
+                                                        / ⟦x : A, y : A ⊢ Id(x, y) type⟧
+                                                     /
+  ⟦Γ, x : A⟧ ----------------------------→ ⟦Γ, x : A, y : A⟧
+      |                                           |
+      |                                           |
+      |                                           |
+      |                                           |
+      |                                           |
+      ↓                                           ↓
+    ⟦Γ⟧ ------------------------------------→ ⟦y : A⟧
+
+    In the other two cases, for Σ and Π, this interpretation agrees with the
+    homotoptical one. But the set-theoretic interpretation of the intensional
+    identity type does not jive with HoTT.  This is a special case that will
+    turn out to appear later in more generality.
+
+    "∀ Blah ∃! Blue" are "Strong Constructions" in Category Theory - preserving
+    these is the name of the game.
+
+-}
 
 
+-- Locally Cartesian Closed Categories
+-- ===================================
+
+{-
+  An LCCC is a category C with
+    ∘ A terminal object 1
+    ∘ Pullbacks
+    ∘ Right-adjoints to pullbacks
+  Further
+    ∘ Diagonals follow from this
+    ∘ A category with a terminal object and pullbacks has all finite limits - e.g. products are pullbacks over 1
 
 
+-}
+
+-- Natural Numbers Objects
+-- =======================
+
+{-
+  A natural numbers object (NNO) in an LCCC is an object N together with
+
+    1 → N for zero
+    N → N for successor
+
+  Such that
+           a     f
+    ∘ ∀ 1 --→ A --→ A ∃! h : N → A such that
+
+               succ
+       N ---------------→ N
+   0 / |                  |
+    1  | h                | h
+   a \ ↓                  ↓
+       A ---------------→ A
+                 f
+  NB: This is what an inductive construction looks like in Category Theory
+-}
+
+-- MLTT in LCCCs
+-- =============
 
 
+{-
+  In 1984, Seely sketched MLTT in LCCCs but there was a problem.
 
+  Problem: Pullbacks and adjoints are only defined up to isomorphism
 
+    We can choose representatives using the axiom of choice, but that's not
+    enough because we also need some equalities. Namely, we need
 
+    1) C --→ B --→ A
+          g    f
+       (g⋆ ∘ f⋆) = (f ∘ g)⋆ : C/A → C/C
 
+       "If pullbacks are substitutions, then performing two substitutions should
+       be exactly the same as substituting the result of iterated substitutions."
+
+    2) Beck-Chevallier Condition: Up to equality!
+
+      Example:
+
+      Γ, x : A, y : B ⊢ C type   Γ ⊢ t : A
+      -------------------------------------
+      Γ, x : A ⊢ Π (y : B) . C type
+      ----------------------------------
+      Γ ⊢ Π (y : B[t/u]) . C[t/u] type
+
+      "First form a dependent product, then form a pullback"
+
+      Or
+
+      Γ, x : A, y : B ⊢ C type   Γ ⊢ t : A
+      -------------------------------------
+      Γ, y : B[t/u] ⊢ C[t/u] type
+      ----------------------------------
+      Γ ⊢ Π (y : B[t/u]) . C[t/u] type
+
+      "First form a pullback, then form a dependent product"
+
+      These two ought to be exactly *equal*.  Not just equivalent.
+
+  Idea: Just hack it in by fixing the Π and Σ types to force this.
+    ∘ Nobody knows how to do this.
+  Idea: Just fixup the notion of display maps a bit
+    ∘ Interpret type families as something a little more abstract but still
+      related to display maps.
+-}
+
+-- Categories with Attributes (CwAs)
+-- ===============================
+
+{-
+  A CwA consists of
+    ∘ A category C
+    ∘ Terminal object 1
+    ∘ A presheaf Ty : Cᵒᵖ → Set
+                      Γ ↦ Ty(Γ)
+                Idea: The objects of C are contexts Γ
+    ∘ For each Γ ∈ Ob(C) and A ∈ Ty(Γ),
+             pᴬ
+        Γ.A --→ Γ
+    ∘ For each Γ ∈ Ob(C), A ∈ Ty(Γ), σ : Δ → Γ, a map σ.A : Δ.A[σ] → Γ.A such that
+      the following diagram is a pullback
+
+                      σ.A
+        Δ.A[σ] --------------------→ Γ.A
+         |                            |
+         |                            |
+         | pᴬ[σ]                      | pᴬ
+         |                            |
+         |                            |
+         ↓             σ              ↓
+         Δ -------------------------→ Γ
+
+      and such that
+        ∘ 1.A = 1
+        ∘ (t ∘ s).A = t[A ∘ (s.A[t])]
+-}
+
+-- Categories with Families (CwFs)
+-- ===============================
+
+{-
+  A category with families has as underlying data
+    ∘ A functor
+      F : Cᵒᵖ → Fam
+          Γ   ↦ Tm(Γ, A) for A ∈ Ty(Γ)
+        where Fam is the Category of Families of Sets
+
+  For any CwA, we can recover a CwF by taking each Γ ∈ Ob(C) and A ∈ Ty(Γ)
+  and setting
+    Tm(Γ,A) = { sections of Γ.A → Γ }
+-}
+
+{-
+  The second, third, and fourth conditions about to the existence of a functor
+
+    ∫ Ty → Cart(C) ⊆ Cᶻ
+       \    /
+    π₁  \ /
+         C
+
+  Cart(C) is a subcategory of the Arrow category with objects all commutative
+  squares that are also cartesian squares.
+-}
+
+{- Question: Something goes horribly wrong if you work in a skeleton category, right?
+   Answer: Probably.  You'd just wind up with an equality on terms and not types or something. -}
+
+{- Tomorrow: Strictification, Homotopification -}
 
 
 
